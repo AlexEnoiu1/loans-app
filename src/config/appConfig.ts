@@ -31,7 +31,7 @@ export function buildAuth0Options(cfg: AppConfig) {
     authorizationParams: {
       redirect_uri: window.location.origin,
       audience: cfg.auth0.audience,
-      scope: 'openid profile email read:products',
+      scope: 'openid profile email read:devices',
     },
     cacheLocation: 'localstorage' as const,
     useRefreshTokens: true,

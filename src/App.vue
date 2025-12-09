@@ -9,7 +9,7 @@ const returnTo = window.location.origin;
 <template>
   <div class="app">
     <header class="topbar">
-      <div class="brand">Products App</div>
+      <div class="brand">Campus Device Loan App</div>
       <div class="spacer"></div>
       <div class="auth">
         <span v-if="!isLoading && isAuthenticated && user" class="user">
