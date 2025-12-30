@@ -52,12 +52,18 @@ watch(isAuthenticated, () => {
             {{ d.description }}
           </p>
 
-          <!-- Optional subtle hint about availability without showing full counts -->
-          <p class="device-card__hint" v-if="(d.availableCount ?? 0) > 0">
-            Currently available to borrow.
-          </p>
-          <p class="device-card__hint device-card__hint--none" v-else>
-            All devices of this model are currently on loan or reserved.
+          <!-- Only show availability messaging when signed in -->
+          <template v-if="isAuthenticated">
+            <p class="device-card__hint" v-if="(d.availableCount ?? 0) > 0">
+              currently available: {{ d.availableCount }}
+            </p>
+            <p class="device-card__hint device-card__hint--none" v-else>
+              currently available: 0
+            </p>
+          </template>
+
+          <p v-else class="device-card__hint">
+            Sign in to see how many are currently available.
           </p>
         </li>
       </ul>

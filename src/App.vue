@@ -13,7 +13,7 @@ const returnTo = window.location.origin;
       <div class="spacer"></div>
       <div class="auth">
         <span v-if="!isLoading && isAuthenticated && user" class="user">
-          Signed in as {{ user.name || user.email }}
+          Hello, {{ user.name }}
         </span>
         <button v-if="!isAuthenticated" @click="loginWithRedirect()">
           Sign in

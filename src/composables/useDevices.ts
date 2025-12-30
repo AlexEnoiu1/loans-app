@@ -3,22 +3,21 @@ import { ref, type Ref } from 'vue';
 import { appConfig } from '@/config/appConfig';
 import { useAuth0 } from '@auth0/auth0-vue';
 
-export type Device = {
+export type DeviceModel = {
   id: string;
   brand: string;
   model: string;
   category: string;
   price: number;
   description?: string;
-  totalCount?: number;
-  availableCount?: number;
+  availableCount?: number; // only present for authenticated endpoint
 };
 
 const API_BASE = appConfig.apiBaseUrl;
 
 export function useDevices() {
   const { isAuthenticated, getAccessTokenSilently } = useAuth0();
-  const devices: Ref<Device[]> = ref([]);
+  const devices: Ref<DeviceModel[]> = ref([]);
   const loading = ref(false);
   const error: Ref<string | null> = ref(null);
 
@@ -28,27 +27,32 @@ export function useDevices() {
     error.value = null;
 
     try {
-      // Adjust "devices" to match your Catalogue route, e.g. "catalogue/devices"
-      const url = new URL('devices', API_BASE).toString();
       const headers: Record<string, string> = { Accept: 'application/json' };
 
+      // Choose endpoint based on auth state
+      let route = 'catalogue'; // public: brand/model/category(+description)
       if (isAuthenticated.value) {
-        try {
-          const token = await getAccessTokenSilently();
-          if (token) headers.Authorization = `Bearer ${token}`;
-        } catch {
-          // proceed unauthenticated
-        }
+        route = 'catalogue/availability'; // authenticated: includes availableCount
+        const token = await getAccessTokenSilently({
+          authorizationParams: {
+            audience: appConfig.auth0.audience, // <-- your API Identifier in Auth0
+            scope: 'read:devices',
+          },
+        });
+
+        headers.Authorization = `Bearer ${token}`;
       }
 
+      const url = new URL(route, API_BASE).toString();
       const res = await fetch(url, { headers });
+
       if (!res.ok) {
         throw new Error(
           `Failed to fetch devices: ${res.status} ${res.statusText}`,
         );
       }
 
-      const data: Device[] = await res.json();
+      const data: DeviceModel[] = await res.json();
       devices.value = Array.isArray(data) ? data : [];
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Unknown error';
@@ -57,5 +61,5 @@ export function useDevices() {
     }
   };
 
-  return { devices, loading, error, fetchDevices };
+  return { devices, loading, error, fetchDevices, isAuthenticated };
 }

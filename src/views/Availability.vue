@@ -70,7 +70,6 @@ const showLoginPrompt = computed(() => !isAuthenticated.value);
               </div>
             </td>
             <td>{{ d.category }}</td>
-            <td>{{ d.totalCount }}</td>
             <td>{{ d.availableCount }}</td>
             <td>
               <span v-if="(d.availableCount ?? 0) > 0" class="badge badge--ok">
