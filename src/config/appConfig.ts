@@ -5,6 +5,7 @@ export interface AppConfig {
     clientId: string;
     audience?: string;
   };
+  appInsightsConnectionString?: string;
 }
 
 export function loadAppConfig(): AppConfig {
@@ -22,6 +23,9 @@ export function loadAppConfig(): AppConfig {
   };
 }
 
+const appInsightsConnectionString = import.meta.env
+  .VITE_APPINSIGHTS_CONNECTION_STRING as string | undefined;
+
 export const appConfig = loadAppConfig();
 
 export function buildAuth0Options(cfg: AppConfig) {
@@ -35,5 +39,6 @@ export function buildAuth0Options(cfg: AppConfig) {
     },
     cacheLocation: 'localstorage' as const,
     useRefreshTokens: true,
+    appInsightsConnectionString,
   };
 }

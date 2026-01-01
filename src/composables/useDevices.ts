@@ -2,6 +2,7 @@
 import { ref, type Ref } from 'vue';
 import { appConfig } from '@/config/appConfig';
 import { useAuth0 } from '@auth0/auth0-vue';
+import { useTelemetry } from '@/composables/useTelemetry';
 
 export type DeviceModel = {
   id: string;
@@ -20,31 +21,43 @@ export function useDevices() {
   const devices: Ref<DeviceModel[]> = ref([]);
   const loading = ref(false);
   const error: Ref<string | null> = ref(null);
+  const { trackEvent, trackException, trackMetric, trackDependency } =
+    useTelemetry();
 
   const fetchDevices = async (force = false) => {
     if (loading.value && !force) return;
     loading.value = true;
     error.value = null;
+    const startTime = Date.now();
+    let success = false;
+    let statusCode: number | undefined;
+
+    const route = isAuthenticated.value
+      ? 'catalogue/availability'
+      : 'catalogue';
 
     try {
       const headers: Record<string, string> = { Accept: 'application/json' };
 
-      // Choose endpoint based on auth state
-      let route = 'catalogue'; // public: brand/model/category(+description)
+      trackEvent('FetchDevices', {
+        force,
+        authenticated: isAuthenticated.value,
+        route,
+      });
+
       if (isAuthenticated.value) {
-        route = 'catalogue/availability'; // authenticated: includes availableCount
         const token = await getAccessTokenSilently({
           authorizationParams: {
-            audience: appConfig.auth0.audience, // <-- your API Identifier in Auth0
+            audience: appConfig.auth0.audience,
             scope: 'read:devices',
           },
         });
-
         headers.Authorization = `Bearer ${token}`;
       }
 
       const url = new URL(route, API_BASE).toString();
       const res = await fetch(url, { headers });
+      statusCode = res.status;
 
       if (!res.ok) {
         throw new Error(
@@ -54,10 +67,28 @@ export function useDevices() {
 
       const data: DeviceModel[] = await res.json();
       devices.value = Array.isArray(data) ? data : [];
+      success = true;
+      trackMetric('DevicesCount', devices.value.length, {
+        authenticated: isAuthenticated.value,
+        route,
+      });
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Unknown error';
+
+      if (e instanceof Error) {
+        trackException(e, { context: 'fetchDevices', route });
+      }
     } finally {
+      const duration = Date.now() - startTime;
       loading.value = false;
+
+      trackDependency(
+        `GET /${route}`,
+        API_BASE + route,
+        duration,
+        success,
+        statusCode,
+      );
     }
   };
 

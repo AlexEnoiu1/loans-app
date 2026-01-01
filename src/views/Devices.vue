@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { onMounted, watch } from 'vue';
 import { useAuth0 } from '@auth0/auth0-vue';
-import { useDevices } from '@/composables/useDevices'; // will create later
+import { useDevices } from '@/composables/useDevices';
+import { useTelemetry } from '@/composables/useTelemetry';
 
 const { devices, loading, error, fetchDevices } = useDevices();
 const { isAuthenticated } = useAuth0();
+const { trackPageView } = useTelemetry();
 
 // initial load
 onMounted(() => {
+  trackPageView('Devices', window.location.pathname);
   fetchDevices();
 });
 

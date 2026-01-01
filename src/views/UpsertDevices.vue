@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useAuth0 } from '@auth0/auth0-vue';
-import { useAddDevice } from '@/composables/useAddDevice';
+import { useUpsertDevices } from '@/composables/useUpsertDevices';
+import { useTelemetry } from '@/composables/useTelemetry';
 
 const { isAuthenticated, loginWithRedirect, user } = useAuth0();
-const { addDevice, loading, error, success } = useAddDevice();
+const { upsertDevices, loading, error, success } = useUpsertDevices();
+const { trackPageView } = useTelemetry();
 
 // Adjust this to match your Auth0 custom claim / roles configuration.
 const isStaff = computed(() => {
+  trackPageView('AddDevice', window.location.pathname);
   const u = user.value as any | null;
   const roles =
     u?.['https://example.com/roles'] ??
@@ -26,7 +29,7 @@ const form = ref({
 });
 
 const handleSubmit = async () => {
-  await addDevice(form.value);
+  await upsertDevices(form.value);
 };
 </script>
 
