@@ -25,8 +25,8 @@ watch(isAuthenticated, () => {
     <header class="page__header">
       <h1>Campus Device Catalogue</h1>
       <p class="page__subtitle">
-        Browse the devices available for loan on campus (brand, model, category,
-        and description).
+        Feel free to browse any of our devices available for loan, right here on
+        our campus page!
       </p>
     </header>
 
