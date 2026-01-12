@@ -1,5 +1,6 @@
 export interface AppConfig {
   apiBaseUrl: string;
+  reservationsApiBaseUrl: string;
   auth0: {
     domain: string;
     clientId: string;
@@ -12,6 +13,11 @@ export function loadAppConfig(): AppConfig {
   const apiBaseUrl =
     (import.meta.env.VITE_API_BASE_URL as string) ??
     'http://localhost:7071/api/';
+
+  const reservationsApiBaseUrl =
+    (import.meta.env.VITE_RESERVATIONS_API_BASE_URL as string) ??
+    'http://localhost:7072/api/';
+
   const domain = (import.meta.env.VITE_AUTH0_DOMAIN as string) ?? '';
   const clientId = (import.meta.env.VITE_AUTH0_CLIENT_ID as string) ?? '';
   const audience =
@@ -19,6 +25,7 @@ export function loadAppConfig(): AppConfig {
 
   return {
     apiBaseUrl,
+    reservationsApiBaseUrl,
     auth0: { domain, clientId, audience },
   };
 }
@@ -35,7 +42,8 @@ export function buildAuth0Options(cfg: AppConfig) {
     authorizationParams: {
       redirect_uri: window.location.origin,
       audience: cfg.auth0.audience,
-      scope: 'openid profile email read:devices',
+      scope:
+        'openid profile email offline_access read:devices read:reservations write:reservations',
     },
     cacheLocation: 'localstorage' as const,
     useRefreshTokens: true,
