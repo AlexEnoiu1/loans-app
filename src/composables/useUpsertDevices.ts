@@ -1,4 +1,4 @@
-// src/composables/useAddDevice.ts
+// src/composables/useAddDevices.ts
 import { ref } from 'vue';
 import { appConfig } from '@/config/appConfig';
 import { useAuth0 } from '@auth0/auth0-vue';

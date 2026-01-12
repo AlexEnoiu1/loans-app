@@ -3,6 +3,7 @@ import { ref, type Ref } from 'vue';
 import { appConfig } from '@/config/appConfig';
 import { useAuth0 } from '@auth0/auth0-vue';
 import { useTelemetry } from '@/composables/useTelemetry';
+import { createFetchWithRetry } from '@/infra/fetch-retry';
 
 export type DeviceModel = {
   id: string;
@@ -55,8 +56,28 @@ export function useDevices() {
         headers.Authorization = `Bearer ${token}`;
       }
 
+      const fetchWithRetry = createFetchWithRetry(fetch, {
+        maxRetries: 1, // 1 retry => 2 total attempts (credit-safe)
+        initialDelayMs: 300,
+        maxDelayMs: 1200,
+        retryOnStatus: [408, 429, 500, 502, 503, 504],
+        onRetry: (info) => {
+          // Telemetry-friendly (no spammy console logs)
+          trackEvent('HttpRetry', {
+            route,
+            method: info.method,
+            url: info.url,
+            attempt: info.attempt,
+            maxRetries: info.maxRetries,
+            delayMs: info.delayMs,
+            status: info.status,
+            errorMessage: info.errorMessage,
+          });
+        },
+      });
+
       const url = new URL(route, API_BASE).toString();
-      const res = await fetch(url, { headers });
+      const res = await fetchWithRetry(url, { headers });
       statusCode = res.status;
 
       if (!res.ok) {
