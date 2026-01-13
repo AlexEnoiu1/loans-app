@@ -93,7 +93,7 @@ watch(isAuthenticated, async () => {
 <template>
   <main class="page page--catalogue">
     <header class="page__header">
-      <h1>Campus Device Catalogue</h1>
+      <h1>Campus Device Catalogue Page</h1>
       <p class="page__subtitle">
         Feel free to browse any of our devices available for loan, right here on
         our campus page!
