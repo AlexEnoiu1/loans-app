@@ -61,11 +61,10 @@ describe('useDevices', () => {
     // Arrange
     const mockDevices: DeviceModel[] = [
       {
-        id: 'm1',
+        modelId: 'm1',
         brand: 'Apple',
         model: 'MacBook Air',
         category: 'Laptop',
-        price: 999,
         description: 'Nice',
       },
     ];
@@ -121,12 +120,12 @@ describe('useDevices', () => {
 
     const mockDevices: DeviceModel[] = [
       {
-        id: 'm1',
+        modelId: 'm1',
         brand: 'Apple',
         model: 'MacBook Air',
         category: 'Laptop',
-        price: 999,
         description: 'Nice',
+        price: 999,
         availableCount: 3,
       },
     ];
@@ -242,10 +241,10 @@ describe('useDevices', () => {
     await fetchDevices();
 
     // Assert
-    expect(error.value).toBe('Unknown error');
-    // trackException should NOT be called because it's not an Error instance
-    expect(trackException).not.toHaveBeenCalled();
+    expect(error.value).toBe('NOPE');
+    expect(trackException).toHaveBeenCalled();
   });
+
   it('retries once on transient 503 then succeeds', async () => {
     // Arrange
     global.fetch = vi
