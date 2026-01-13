@@ -31,29 +31,48 @@ const {
 
 const { trackPageView } = useTelemetry();
 
-// Build a quick lookup: deviceModelId -> reservation (only active reserved ones)
+const DUE_DAYS = 2;
+const DUE_MS = DUE_DAYS * 24 * 60 * 60 * 1000;
+
+function formatDateTime(d: Date): string {
+  return d.toLocaleString(undefined, {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function computeDueAt(reservedAtIso: string): string {
+  const reservedAt = new Date(reservedAtIso);
+  if (isNaN(reservedAt.getTime())) return 'Unknown';
+  const dueAt = new Date(reservedAt.getTime() + DUE_MS);
+  return formatDateTime(dueAt);
+}
+
+function formatReservedAt(reservedAtIso: string): string {
+  const reservedAt = new Date(reservedAtIso);
+  if (isNaN(reservedAt.getTime())) return 'Unknown';
+  return formatDateTime(reservedAt);
+}
+
+// deviceModelId -> reservation (only active reserved ones)
 const activeReservationByModelId = computed(() => {
   const map = new Map<string, (typeof reservations.value)[number]>();
-
   for (const r of reservations.value) {
-    if (r.status === 'reserved') {
-      map.set(r.deviceModelId, r);
-    }
+    if (r.status === 'reserved') map.set(r.deviceModelId, r);
   }
-
   return map;
 });
 
 function myReservationForModel(modelId: string) {
-  // Reservation uses deviceModelId; catalogue uses modelId. They match by value.
   return activeReservationByModelId.value.get(modelId) ?? null;
 }
 
 async function onReserve(modelId: string) {
-  // Map catalogue modelId -> reservation deviceModelId
   const created = await addReservation({ deviceModelId: modelId });
   if (created) {
-    // Refresh to reflect state
     await fetchDevices(true);
     await fetchMyReservations(true);
   }
@@ -67,7 +86,6 @@ async function onCancel(reservationId: string) {
   }
 }
 
-// initial load
 onMounted(async () => {
   trackPageView('Devices', window.location.pathname);
   await fetchDevices();
@@ -77,14 +95,12 @@ onMounted(async () => {
   }
 });
 
-// refresh when auth changes (login/logout)
 watch(isAuthenticated, async () => {
   await fetchDevices(true);
 
   if (isAuthenticated.value) {
     await fetchMyReservations(true);
   } else {
-    // optional: clear out reservations UI when logged out
     reservations.value = [];
   }
 });
@@ -113,7 +129,6 @@ watch(isAuthenticated, async () => {
       </div>
 
       <ul v-else class="device-grid">
-        <!-- key is modelId (not id) -->
         <li v-for="d in devices" :key="d.modelId" class="device-card">
           <header class="device-card__header">
             <h2 class="device-card__title">{{ d.brand }} {{ d.model }}</h2>
@@ -129,13 +144,16 @@ watch(isAuthenticated, async () => {
             <p v-if="d.price != null" class="device-card__hint">
               Price: £{{ d.price }}
             </p>
+
             <p class="device-card__hint" v-if="(d.availableCount ?? 0) > 0">
               currently available: {{ d.availableCount }}
             </p>
+
             <p class="device-card__hint device-card__hint--none" v-else>
               currently available: 0
             </p>
           </template>
+
           <p v-else class="device-card__hint">
             Sign in to see how many are currently available.
           </p>
@@ -158,6 +176,23 @@ watch(isAuthenticated, async () => {
                 <template v-if="myReservationForModel(d.modelId)">
                   <p class="device-card__hint">
                     You’ve reserved this device model.
+                  </p>
+
+                  <!-- ✅ NEW: Due date display (2 days after reservedAt) -->
+                  <p class="device-card__hint">
+                    Reserved at:
+                    {{
+                      formatReservedAt(
+                        myReservationForModel(d.modelId)!.reservedAt,
+                      )
+                    }}
+                  </p>
+                  <p class="device-card__hint">
+                    Due back:
+                    {{
+                      computeDueAt(myReservationForModel(d.modelId)!.reservedAt)
+                    }}
+                    ({{ DUE_DAYS }} days)
                   </p>
 
                   <button
